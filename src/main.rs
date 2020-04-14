@@ -4,14 +4,11 @@ use std::collections::HashMap;
 
 mod sprites;
 use sprites::Sprite;
-
-const W: usize = 80;
-const H: usize = 80;
+mod entity;
+use entity::Entity;
 
 const WINDOW_W: usize = 640;
 const WINDOW_H: usize = 640;
-
-const CELL_TO_WINDOW_SCALE: u32 = 8;
 
 fn main() {
     let digits = image::open("digits.png").unwrap().to_rgba();
@@ -31,102 +28,75 @@ fn main() {
     symbols.insert('8', Sprite::load_from_image(&digits, 144, 0, 14, 18));
     symbols.insert('9', Sprite::load_from_image(&digits, 162, 0, 14, 18));
 
-    symbols.insert('o', Sprite::load_from_image(&sprites, 0, 0, 8, 8));
-    symbols.insert('t', Sprite::load_from_image(&sprites, 8, 0, 8, 8));
+    symbols.insert('g', Sprite::load_from_image(&sprites, 0, 0, 16, 16));
     symbols.insert('c', Sprite::load_from_image(&coin_img, 1, 1, 14, 14));
 
-    let mut map: Vec<bool> = Vec::new();
-    map.resize_with(W * H, rand::random);
+    let mut player = Entity::new_from_sprite(symbols.get(&'c').unwrap().clone(), 0, 0);
+    let mut player_vec_y: f64 = 0.0;
 
+    let mut world: Vec<Entity> = [
+        Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 0, 100),
+        Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16, 100),
+        Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 32, 100)
+    ].to_vec();
     //println!("Hello, world!");
     //println!("{:?}",map);
     //print_play_ground(&map);
 
     let mut window_buffer = Sprite::new(WINDOW_W, WINDOW_H);
 
-    let mut window = Window::new(
-        "Conways Game of Life",
-        WINDOW_W,
-        WINDOW_H,
-        WindowOptions::default(),
-    )
-    .unwrap_or_else(|e| {
-        panic!("{}", e);
-    });
+    let mut window = Window::new("u32 engine", WINDOW_W, WINDOW_H, WindowOptions::default())
+        .unwrap_or_else(|e| {
+            panic!("{}", e);
+        });
 
     // Limit to max ~60 fps update rate
     window.limit_update_rate(Some(std::time::Duration::from_micros(1000)));
 
-    let mut paused = false;
-    let mut same_frame_counter = 0;
-    let mut speed: u32 = 300;
-    let mut was_mouse: u32 = 0;
-
-    let mut last_mouse_pos = (0, 0);
     while window.is_open() && !window.is_key_down(Key::Escape) {
         window_buffer.clear();
-        if window.is_key_pressed(Key::Space, minifb::KeyRepeat::No) {
-            paused = !paused;
-        }
 
-        if window.get_mouse_down(minifb::MouseButton::Left) {
-            let mouse = window.get_mouse_pos(minifb::MouseMode::Clamp).unwrap();
-            let cell_x: usize = (mouse.0 / CELL_TO_WINDOW_SCALE as f32).floor() as usize;
-            let cell_y: usize = (mouse.1 / CELL_TO_WINDOW_SCALE as f32).floor() as usize;
-            if last_mouse_pos == (cell_x, cell_y) {
-                was_mouse = (was_mouse + 1) % 50;
-            } else {
-                was_mouse = 0;
-            }
-            last_mouse_pos = (cell_x, cell_y);
-            if was_mouse == 0 {
-                map[cell_x + W * cell_y] = !map[cell_x + W * cell_y];
-            }
-        }
-
-        if window.is_key_pressed(Key::Comma, minifb::KeyRepeat::Yes) {
-            speed -= 10;
-        } else if window.is_key_pressed(Key::Period, minifb::KeyRepeat::Yes) {
-            speed += 10;
-        }
-
-        if !paused {
-            same_frame_counter = (same_frame_counter + 1) % speed;
-            if same_frame_counter == 0 {
-                map = gen_next_map(map);
-            }
-        }
-
-        for cell_y in 0..H {
-            for cell_x in 0..W {
-                let cell = cell_x + cell_y * W;
-                if map[cell] {
-                    window_buffer.draw_sprite(
-                        cell_x * CELL_TO_WINDOW_SCALE as usize,
-                        cell_y * CELL_TO_WINDOW_SCALE as usize,
-                        symbols.get(&'t').unwrap(),
-                    );
-                } else {
-                    window_buffer.draw_sprite(
-                        cell_x * CELL_TO_WINDOW_SCALE as usize,
-                        cell_y * CELL_TO_WINDOW_SCALE as usize,
-                        symbols.get(&'o').unwrap(),
-                    );
+        // Key Input
+        window.get_keys().map(|keys| {
+            for t in keys {
+                match t {
+                    Key::W => player.y -= 1,
+                    Key::A => player.x -= 1,
+                    Key::S => player.y += 1,
+                    Key::D => player.x += 1,
+                    Key::Space => {
+                        if rectRect(player.x, player.y, player.width as i32, player.height as i32, 0, 100, 16, 16){
+                            player_vec_y -= 5.0;
+                        }
+                    }
+                    _ => (),
                 }
             }
+        });
+
+        // draw player:
+        window_buffer.draw_sprite(player.x as usize, player.y as usize, &player.texture);
+        window_buffer.draw_sprite(0, 100, symbols.get(&'g').unwrap());
+        if !rectRect(player.x, player.y, player.width as i32, player.height as i32, 0, 100, 16, 16){
+            player_vec_y += 2.0;
         }
 
-        if paused {
-            window_buffer.draw_rect(10, 10, 10, 30, 0xAA_AA_AA_AA);
-            window_buffer.draw_rect(30, 10, 10, 30, 0xAA_AA_AA_AA);
+        for i in 0..player_vec_y.abs() as u32{
+            println!("{}",i);
+            if player_vec_y > 0.0{
+                player.y += 1;
+                if rectRect(player.x, player.y, player.width as i32, player.height as i32, 0, 100, 16, 16){
+                    player_vec_y = 0.0;
+                    break;
+                }
+            }else{
+                player.y -= 1;
+            }
         }
 
-        // draw current speed
-        for (i, digit) in speed.to_string().chars().enumerate() {
-            window_buffer.draw_sprite(570 + i * 20, 10, symbols.get(&digit).unwrap());
-        }
+        //player.y += player_vec_y as i32;
+        //println!("{}",rectRect(player.x, player.y, player.width as i32, player.height as i32, 0, 100, 16, 16));
 
-        window_buffer.draw_sprite(0, 0,symbols.get(&'c').unwrap());
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         window
             .update_with_buffer(&window_buffer.buffer, WINDOW_W, WINDOW_H)
@@ -174,54 +144,33 @@ fn blend(a: u32, b: u32) -> u32 {
 
     u32::from_be_bytes([alpha, red, green, blue])
 }
-
-fn gen_next_map(map: Vec<bool>) -> Vec<bool> {
-    let mut next_map: Vec<bool> = Vec::with_capacity(map.len());
-    for y in 0..H {
-        let y = y as isize;
-        for x in 0..W {
-            let x = x as isize;
-            let iw: isize = W as isize;
-
-            let adjacent_count = map
-                .get(((x - 1) + iw * (y - 1)) as usize)
-                .map(|x| *x as u32)
-                .unwrap_or_default()
-                + map
-                    .get(((x - 1) + iw * y) as usize)
-                    .map(|x| *x as u32)
-                    .unwrap_or_default()
-                + map
-                    .get(((x - 1) + iw * (y + 1)) as usize)
-                    .map(|x| *x as u32)
-                    .unwrap_or_default()
-                + map
-                    .get((x + iw * (y - 1)) as usize)
-                    .map(|x| *x as u32)
-                    .unwrap_or_default()
-                + map
-                    .get((x + iw * (y + 1)) as usize)
-                    .map(|x| *x as u32)
-                    .unwrap_or_default()
-                + map
-                    .get(((x + 1) + iw * (y - 1)) as usize)
-                    .map(|x| *x as u32)
-                    .unwrap_or_default()
-                + map
-                    .get(((x + 1) + iw * y) as usize)
-                    .map(|x| *x as u32)
-                    .unwrap_or_default()
-                + map
-                    .get(((x + 1) + iw * (y + 1)) as usize)
-                    .map(|x| *x as u32)
-                    .unwrap_or_default();
-
-            if adjacent_count == 2 && map[x as usize + W * y as usize] || adjacent_count == 3 {
-                next_map.push(true);
-            } else {
-                next_map.push(false);
-            }
+fn is_player_colliding_with_entity_vec(player: &Entity,entity_vec: &Vec<Entity>) -> bool{
+    for entity in entity_vec{
+        if rectRect(player.x, player.y, player.width as i32, player.height as i32, entity.x, entity.y, entity.width as i32, entity.height as i32){
+            return true;
         }
     }
-    next_map
+    return  false;
+}
+
+fn rectRect(
+    r1x: i32,
+    r1y: i32,
+    r1w: i32,
+    r1h: i32,
+    r2x: i32,
+    r2y: i32,
+    r2w: i32,
+    r2h: i32,
+) -> bool {
+    // are the sides of one rectangle touching the other?
+    if r1x + r1w >= r2x &&    // r1 right edge past r2 left
+        r1x <= r2x + r2w &&    // r1 left edge past r2 right
+        r1y + r1h >= r2y &&    // r1 top edge past r2 bottom
+        r1y <= r2y + r2h
+    {
+        // r1 bottom edge past r2 top
+        return true;
+    }
+    return false;
 }

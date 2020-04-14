@@ -1,5 +1,6 @@
 use image::Pixel;
 
+#[derive(Debug, Clone)]
 pub struct Sprite {
     pub width: usize,
     pub height: usize,
