@@ -46,19 +46,19 @@ fn main() {
         if i == 18 {
             continue;
         }
-        world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * i, 100));
+        world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * i, 96));
     }
-    world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 18, 116));
+    world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 18, 112));
 
-    world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 11, 68));
-    world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 12, 68));
-    world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 13, 68));
+    world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 11, 64));
+    world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 12, 64));
+    world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 13, 64));
 
     for i in 1..4{
-        world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 32, 100 - 16*i));
+        world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 32, 96 - 16*i));
     }
 
-    let goal = Entity::new_from_sprite(symbols.get(&'G').unwrap().clone(), 624, 84);
+    let goal = Entity::new_from_sprite(symbols.get(&'G').unwrap().clone(), 624, 80);
     //println!("Hello, world!");
     //println!("{:?}",map);
     //print_play_ground(&map);
@@ -169,6 +169,27 @@ fn main() {
             // THE FLOOR IS LAVA!!!1
             player.x = 0;
             player.y = 0;
+        }
+        // place block where clicked
+        if window.get_mouse_down(minifb::MouseButton::Left) {
+            let mouse = window.get_mouse_pos(minifb::MouseMode::Clamp).unwrap();
+            let cell_x = (mouse.0 / 16.0).floor() as i32;
+            let cell_y = (mouse.1 / 16.0).floor() as i32;
+
+            let new = Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * cell_x, 16 * cell_y);
+            let mut existing = None;
+            for (i, entity) in world.iter().enumerate() {
+                if rect_rect(new.x, new.y, new.width as i32, new.height as i32, entity.x, entity.y, entity.width as i32, entity.height as i32){
+                    existing = Some(i);
+                    break;
+                }
+            }
+            if let Some(i) = existing {
+                // something was under mouse, kill it! :D
+                world.remove(i);
+            } else {
+                world.push(new);
+            }
         }
 
         window_buffer.draw_sprite(goal.x, goal.y, &goal.texture);
