@@ -7,8 +7,8 @@ use sprites::Sprite;
 mod entity;
 use entity::Entity;
 
-const WINDOW_W: usize = 640;
-const WINDOW_H: usize = 640;
+const WINDOW_W: u32 = 640;
+const WINDOW_H: u32 = 640;
 
 fn main() {
     let digits = image::open("digits.png").unwrap().to_rgba();
@@ -41,6 +41,9 @@ fn main() {
     let mut world: Vec<Entity> = [].to_vec();
 
     for i in 0..40{
+        if i > 17 && i < 21 {
+            continue;
+        }
         world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * i, 100));
     }
     let goal = Entity::new_from_sprite(symbols.get(&'G').unwrap().clone(), 624, 84);
@@ -50,7 +53,7 @@ fn main() {
 
     let mut window_buffer = Sprite::new(WINDOW_W, WINDOW_H);
 
-    let mut window = Window::new("u32 engine", WINDOW_W, WINDOW_H, WindowOptions::default())
+    let mut window = Window::new("u32 engine", WINDOW_W as usize, WINDOW_H as usize, WindowOptions::default())
         .unwrap_or_else(|e| {
             panic!("{}", e);
         });
@@ -81,7 +84,7 @@ fn main() {
 
         // draw world:
         for entity in &world{
-            window_buffer.draw_sprite(entity.x as usize, entity.y as usize, &entity.texture);
+            window_buffer.draw_sprite(entity.x, entity.y, &entity.texture);
         }
 
         // gravity:
@@ -89,8 +92,7 @@ fn main() {
             player_vec_y += 2.0;
         }
 
-        for i in 0..player_vec_y.abs() as u32{
-            println!("{}",i);
+        for _ in 0..player_vec_y.abs() as u32{
             if player_vec_y > 0.0{
                 player.y += 1;
                 if is_player_colliding_with_entity_vec(&player,&world){
@@ -102,16 +104,22 @@ fn main() {
             }
         }
 
-        window_buffer.draw_sprite(goal.x as usize, goal.y as usize, &goal.texture);
+        if player.y + player.height as i32 > WINDOW_H as i32{
+            // THE FLOOR IS LAVA!!!1
+            player.x = 0;
+            player.y = 0;
+        }
+
+        window_buffer.draw_sprite(goal.x, goal.y, &goal.texture);
         if is_player_colliding_with_entity_vec(&player, &[goal.clone()]){
             window_buffer.draw_sprite(295, 50, symbols.get(&'W').unwrap());
         }
 
         // draw player:
         if is_player_colliding_with_entity_vec(&player,&world){
-            window_buffer.draw_sprite(player.x as usize, player.y as usize, &player.texture);
+            window_buffer.draw_sprite(player.x, player.y, &player.texture);
         }else{
-            window_buffer.draw_sprite(player.x as usize, player.y as usize, &symbols.get(&'P').unwrap());
+            window_buffer.draw_sprite(player.x, player.y, &symbols.get(&'P').unwrap());
         }
 
         //player.y += player_vec_y as i32;
@@ -119,7 +127,7 @@ fn main() {
 
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         window
-            .update_with_buffer(&window_buffer.buffer, WINDOW_W, WINDOW_H)
+            .update_with_buffer(&window_buffer.buffer, WINDOW_W as usize, WINDOW_H as usize)
             .unwrap();
     }
 }
@@ -142,9 +150,9 @@ fn draw_from_image(
                 .get_pixel((image_x + x) as u32, (image_y + y) as u32)
                 .channels();
             //print!("{:?} ", pixel);
-            buffer[(x + buffer_x) + (y + buffer_y) * WINDOW_W] = blend(
+            buffer[(x + buffer_x) + (y + buffer_y) * WINDOW_W as usize] = blend(
                 u32::from_be_bytes([pixel[3], pixel[0], pixel[1], pixel[2]]),
-                buffer[(x + buffer_x) + (y + buffer_y) * WINDOW_W],
+                buffer[(x + buffer_x) + (y + buffer_y) * WINDOW_W as usize],
             );
         }
         //println!();

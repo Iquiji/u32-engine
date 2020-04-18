@@ -2,15 +2,15 @@ use image::Pixel;
 
 #[derive(Debug, Clone)]
 pub struct Sprite {
-    pub width: usize,
-    pub height: usize,
+    pub width: u32,
+    pub height: u32,
     pub buffer: Vec<u32>,
 }
 impl Sprite {
     #[allow(dead_code)]
     pub fn clear(&mut self) {
         for xy in 0..self.width * self.height {
-            self.buffer[xy] = 0xFF_FF_FF_FF;
+            self.buffer[xy as usize] = 0xFF_FF_FF_FF;
         }
     }
     #[allow(dead_code)]
@@ -27,7 +27,7 @@ impl Sprite {
         let mut y = y0 as f64;
 
         loop {
-            self.buffer[x as usize + y as usize * self.width] = color;
+            self.buffer[(x as u32 + y as u32* self.width) as usize] = color;
             if x as usize == x1 && y as usize == y1 {
                 break;
             }
@@ -45,10 +45,10 @@ impl Sprite {
     #[allow(dead_code)]
     pub fn load_from_image(
         image: &image::RgbaImage,
-        start_x: usize,
-        start_y: usize,
-        size_x: usize,
-        size_y: usize,
+        start_x: u32,
+        start_y: u32,
+        size_x: u32,
+        size_y: u32,
     ) -> Self {
         let mut symbol: Sprite = Sprite {
             width: size_x,
@@ -66,18 +66,24 @@ impl Sprite {
         symbol
     }
     #[allow(dead_code)]
-    pub fn draw_sprite(&mut self, pos_x: usize, pos_y: usize, sprite: &Sprite) {
-        for y in 0..sprite.height {
-            for x in 0..sprite.width {
-                self.buffer[(x + pos_x) + (y + pos_y) * self.width] = blend(
-                    sprite.buffer[x + y * sprite.width],
-                    self.buffer[(x + pos_x) + (y + pos_y) * self.width],
+    pub fn draw_sprite(&mut self, pos_x: i32, pos_y: i32, sprite: &Sprite) {
+        for y in 0..sprite.height as i32{
+            if pos_y + y >= self.height as i32 || pos_y + y < 0{
+                continue;
+            }
+            for x in 0..sprite.width as i32{
+                if pos_x + x >= self.width as i32 || pos_x + x < 0{
+                    continue;
+                }
+                self.buffer[((x + pos_x) + (y + pos_y) * self.width as i32) as usize] = blend(
+                    sprite.buffer[(x + y * sprite.width as i32) as usize],
+                    self.buffer[((x + pos_x) + (y + pos_y) * self.width as i32) as usize],
                 );
             }
         }
     }
     #[allow(dead_code)]
-    pub fn new(width: usize, height: usize) -> Sprite {
+    pub fn new(width: u32, height: u32) -> Sprite {
         let mut shallow: Sprite = Sprite {
             width,
             height,
@@ -89,10 +95,10 @@ impl Sprite {
         shallow
     }
     #[allow(dead_code)]
-    pub fn draw_rect(&mut self, x: usize, y: usize, size_x: usize, size_y: usize, color: u32) {
+    pub fn draw_rect(&mut self, x: u32, y: u32, size_x: u32, size_y: u32, color: u32) {
         for y in y..(y + size_y) {
             for x in x..(x + size_x) {
-                self.buffer[x + y * self.width] = blend(color, self.buffer[x + y * self.width]);
+                self.buffer[(x + y * self.width) as usize] = blend(color, self.buffer[(x + y * self.width) as usize]);
             }
         }
     }
