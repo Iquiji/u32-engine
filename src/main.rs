@@ -36,16 +36,28 @@ fn main() {
     symbols.insert('P', Sprite::load_from_image(&sprites, 48, 0, 16, 16));  // player in air
 
     let mut player = Entity::new_from_sprite(symbols.get(&'p').unwrap().clone(), 0, 0);
-    let mut player_vec_y: f64 = 0.0;
+    let mut player_vec_x: i32;
+    let mut player_vec_y: i32 = 0;
 
     let mut world: Vec<Entity> = [].to_vec();
+    let mut may_jump = false;
 
     for i in 0..40{
-        if i > 17 && i < 21 {
+        if i == 18 {
             continue;
         }
         world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * i, 100));
     }
+    world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 18, 116));
+
+    world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 11, 68));
+    world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 12, 68));
+    world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 13, 68));
+
+    for i in 1..4{
+        world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * 32, 100 - 16*i));
+    }
+
     let goal = Entity::new_from_sprite(symbols.get(&'G').unwrap().clone(), 624, 84);
     //println!("Hello, world!");
     //println!("{:?}",map);
@@ -65,16 +77,17 @@ fn main() {
         window_buffer.clear();
 
         // Key Input
+        player_vec_x = 0;
         if let Some(keys) = window.get_keys() {
             for t in keys {
                 match t {
-                    Key::W => player.y -= 1,
-                    Key::A => player.x -= 3,
-                    Key::S => player.y += 1,
-                    Key::D => player.x += 3,
+                    //Key::W => player.y -= 1,
+                    Key::A => player_vec_x = -3,
+                    //Key::S => player.y += 1,
+                    Key::D => player_vec_x = 3,
                     Key::Space => {
-                        if is_player_colliding_with_entity_vec(&player,&world){
-                            player_vec_y -= 10.0;
+                        if may_jump{
+                            player_vec_y -= 14;
                         }
                     }
                     _ => (),
@@ -89,21 +102,69 @@ fn main() {
 
         // gravity:
         if !is_player_colliding_with_entity_vec(&player,&world){
-            player_vec_y += 2.0;
+            player_vec_y += 2;
         }
 
-        for _ in 0..player_vec_y.abs() as u32{
-            if player_vec_y > 0.0{
-                player.y += 1;
+        may_jump = false;
+        let mut remaining_vec_y = player_vec_y;
+        // X movement
+        for _ in 0..player_vec_x.abs(){
+            if player_vec_x > 0{
+                player.x += 1;
                 if is_player_colliding_with_entity_vec(&player,&world){
-                    player_vec_y = 0.0;
+                    player.x -= 1;
+                    break;
+                }
+            }else{
+                player.x -= 1;
+                if is_player_colliding_with_entity_vec(&player,&world){
+                    player.x += 1;
+                    break; 
+                }
+            }
+
+            // remaining Y movement in each X movement O_
+            for _ in 0..remaining_vec_y.abs(){
+                if player_vec_y > 0{
+                    player.y += 1;
+                    remaining_vec_y -= 1;
+                    if is_player_colliding_with_entity_vec(&player,&world){
+                        player.y -= 1;
+                        may_jump = true;
+                        break;
+                    }
+                }else{
+                    player.y -= 1;
+                    remaining_vec_y += 1;
+                    if is_player_colliding_with_entity_vec(&player,&world){
+                        player.y += 1;
+                        break;
+                    }
+                }
+            }
+        }
+        // remaining Y movement in each X movement O_
+        for _ in 0..remaining_vec_y.abs(){
+            if player_vec_y > 0{
+                player.y += 1;
+                remaining_vec_y -= 1;
+                if is_player_colliding_with_entity_vec(&player,&world){
+                    player_vec_y = -1;
+                    player.y -= 1;
+                    may_jump = true;
                     break;
                 }
             }else{
                 player.y -= 1;
+                remaining_vec_y += 1;
+                if is_player_colliding_with_entity_vec(&player,&world){
+                    player_vec_y = 0;
+                    player.y += 1;
+                    break;
+                }
             }
         }
-
+        
         if player.y + player.height as i32 > WINDOW_H as i32{
             // THE FLOOR IS LAVA!!!1
             player.x = 0;
@@ -116,12 +177,12 @@ fn main() {
         }
 
         // draw player:
-        if is_player_colliding_with_entity_vec(&player,&world){
+        if may_jump {
             window_buffer.draw_sprite(player.x, player.y, &player.texture);
         }else{
             window_buffer.draw_sprite(player.x, player.y, &symbols.get(&'P').unwrap());
         }
-
+        println!("x:{} y:{}",player.x,player.y);
         //player.y += player_vec_y as i32;
         //println!("{}",rect_rect(player.x, player.y, player.width as i32, player.height as i32, 0, 100, 16, 16));
 
@@ -193,12 +254,11 @@ fn rect_rect(
     r2h: i32,
 ) -> bool {
     // are the sides of one rectangle touching the other?
-    if r1x + r1w >= r2x &&    // r1 right edge past r2 left
-        r1x <= r2x + r2w &&    // r1 left edge past r2 right
-        r1y + r1h >= r2y &&    // r1 top edge past r2 bottom
-        r1y <= r2y + r2h
+    if r1x + r1w > r2x &&     // r1 right edge past r2 left
+        r1x < r2x + r2w &&    // r1 left edge past r2 right
+        r1y + r1h > r2y &&    // r1 top edge past r2 bottom
+        r1y < r2y + r2h       // r1 bottom edge past r2 top
     {
-        // r1 bottom edge past r2 top
         return true;
     }
     false
