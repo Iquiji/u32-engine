@@ -10,7 +10,7 @@ impl Sprite {
     #[allow(dead_code)]
     pub fn clear(&mut self) {
         for xy in 0..self.width * self.height {
-            self.buffer[xy] = 0xFF_00_00_00;
+            self.buffer[xy] = 0xFF_FF_FF_FF;
         }
     }
     #[allow(dead_code)]
@@ -76,6 +76,7 @@ impl Sprite {
             }
         }
     }
+    #[allow(dead_code)]
     pub fn new(width: usize, height: usize) -> Sprite {
         let mut shallow: Sprite = Sprite {
             width,
@@ -87,6 +88,7 @@ impl Sprite {
         }
         shallow
     }
+    #[allow(dead_code)]
     pub fn draw_rect(&mut self, x: usize, y: usize, size_x: usize, size_y: usize, color: u32) {
         for y in y..(y + size_y) {
             for x in x..(x + size_x) {

@@ -29,16 +29,21 @@ fn main() {
     symbols.insert('9', Sprite::load_from_image(&digits, 162, 0, 14, 18));
 
     symbols.insert('g', Sprite::load_from_image(&sprites, 0, 0, 16, 16));
+    symbols.insert('G', Sprite::load_from_image(&sprites, 16, 0, 16, 16)); // goal
+    symbols.insert('W', Sprite::load_from_image(&sprites, 0, 16, 50, 9)); // u win!
     symbols.insert('c', Sprite::load_from_image(&coin_img, 1, 1, 14, 14));
+    symbols.insert('p', Sprite::load_from_image(&sprites, 32, 0, 16, 16));  // player on ground
+    symbols.insert('P', Sprite::load_from_image(&sprites, 48, 0, 16, 16));  // player in air
 
-    let mut player = Entity::new_from_sprite(symbols.get(&'c').unwrap().clone(), 0, 0);
+    let mut player = Entity::new_from_sprite(symbols.get(&'p').unwrap().clone(), 0, 0);
     let mut player_vec_y: f64 = 0.0;
 
-    let mut world: Vec<Entity> = [
-        Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 0, 100),
-        Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16, 100),
-        Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 32, 100)
-    ].to_vec();
+    let mut world: Vec<Entity> = [].to_vec();
+
+    for i in 0..40{
+        world.push(Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), 16 * i, 100));
+    }
+    let goal = Entity::new_from_sprite(symbols.get(&'G').unwrap().clone(), 624, 84);
     //println!("Hello, world!");
     //println!("{:?}",map);
     //print_play_ground(&map);
@@ -51,33 +56,36 @@ fn main() {
         });
 
     // Limit to max ~60 fps update rate
-    window.limit_update_rate(Some(std::time::Duration::from_micros(1000)));
+    window.limit_update_rate(Some(std::time::Duration::from_micros(20000)));
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         window_buffer.clear();
 
         // Key Input
-        window.get_keys().map(|keys| {
+        if let Some(keys) = window.get_keys() {
             for t in keys {
                 match t {
                     Key::W => player.y -= 1,
-                    Key::A => player.x -= 1,
+                    Key::A => player.x -= 3,
                     Key::S => player.y += 1,
-                    Key::D => player.x += 1,
+                    Key::D => player.x += 3,
                     Key::Space => {
-                        if rectRect(player.x, player.y, player.width as i32, player.height as i32, 0, 100, 16, 16){
-                            player_vec_y -= 5.0;
+                        if is_player_colliding_with_entity_vec(&player,&world){
+                            player_vec_y -= 10.0;
                         }
                     }
                     _ => (),
                 }
             }
-        });
+        };
 
-        // draw player:
-        window_buffer.draw_sprite(player.x as usize, player.y as usize, &player.texture);
-        window_buffer.draw_sprite(0, 100, symbols.get(&'g').unwrap());
-        if !rectRect(player.x, player.y, player.width as i32, player.height as i32, 0, 100, 16, 16){
+        // draw world:
+        for entity in &world{
+            window_buffer.draw_sprite(entity.x as usize, entity.y as usize, &entity.texture);
+        }
+
+        // gravity:
+        if !is_player_colliding_with_entity_vec(&player,&world){
             player_vec_y += 2.0;
         }
 
@@ -85,7 +93,7 @@ fn main() {
             println!("{}",i);
             if player_vec_y > 0.0{
                 player.y += 1;
-                if rectRect(player.x, player.y, player.width as i32, player.height as i32, 0, 100, 16, 16){
+                if is_player_colliding_with_entity_vec(&player,&world){
                     player_vec_y = 0.0;
                     break;
                 }
@@ -94,8 +102,20 @@ fn main() {
             }
         }
 
+        window_buffer.draw_sprite(goal.x as usize, goal.y as usize, &goal.texture);
+        if is_player_colliding_with_entity_vec(&player, &[goal.clone()]){
+            window_buffer.draw_sprite(295, 50, symbols.get(&'W').unwrap());
+        }
+
+        // draw player:
+        if is_player_colliding_with_entity_vec(&player,&world){
+            window_buffer.draw_sprite(player.x as usize, player.y as usize, &player.texture);
+        }else{
+            window_buffer.draw_sprite(player.x as usize, player.y as usize, &symbols.get(&'P').unwrap());
+        }
+
         //player.y += player_vec_y as i32;
-        //println!("{}",rectRect(player.x, player.y, player.width as i32, player.height as i32, 0, 100, 16, 16));
+        //println!("{}",rect_rect(player.x, player.y, player.width as i32, player.height as i32, 0, 100, 16, 16));
 
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         window
@@ -144,16 +164,17 @@ fn blend(a: u32, b: u32) -> u32 {
 
     u32::from_be_bytes([alpha, red, green, blue])
 }
-fn is_player_colliding_with_entity_vec(player: &Entity,entity_vec: &Vec<Entity>) -> bool{
+fn is_player_colliding_with_entity_vec(player: &Entity,entity_vec: &[Entity]) -> bool{
     for entity in entity_vec{
-        if rectRect(player.x, player.y, player.width as i32, player.height as i32, entity.x, entity.y, entity.width as i32, entity.height as i32){
+        if rect_rect(player.x, player.y, player.width as i32, player.height as i32, entity.x, entity.y, entity.width as i32, entity.height as i32){
             return true;
         }
     }
-    return  false;
+    false
 }
 
-fn rectRect(
+#[allow(clippy::too_many_arguments)]
+fn rect_rect(
     r1x: i32,
     r1y: i32,
     r1w: i32,
@@ -172,5 +193,5 @@ fn rectRect(
         // r1 bottom edge past r2 top
         return true;
     }
-    return false;
+    false
 }
