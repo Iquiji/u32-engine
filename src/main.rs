@@ -6,6 +6,8 @@ mod sprites;
 use sprites::Sprite;
 mod entity;
 use entity::Entity;
+mod interactables;
+use interactables::Player;
 
 const WINDOW_W: u32 = 640;
 const WINDOW_H: u32 = 640;
@@ -203,7 +205,7 @@ fn main() {
         }else{
             window_buffer.draw_sprite(player.x, player.y, &symbols.get(&'P').unwrap());
         }
-        println!("x:{} y:{}",player.x,player.y);
+        //println!("x:{} y:{}",player.x,player.y);
         //player.y += player_vec_y as i32;
         //println!("{}",rect_rect(player.x, player.y, player.width as i32, player.height as i32, 0, 100, 16, 16));
 

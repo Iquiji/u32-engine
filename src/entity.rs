@@ -19,3 +19,7 @@ impl Entity {
         }
     }
 }
+
+pub trait Interactable {
+    fn update(self);
+}
