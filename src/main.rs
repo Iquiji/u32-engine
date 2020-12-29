@@ -61,6 +61,7 @@ fn main() {
     }
     let mut coin: Entity = Entity::new_from_sprite(symbols.get(&'c').unwrap().clone(), 15*16, 15*16);
 
+    let mut score: u64 = 0;
     let mut i: u64 = 0;
     while window.is_open() && !window.is_key_down(Key::Escape) {
         const MAX_UPDATE_EVERY : u64 = 15; // ~?/sec
@@ -80,7 +81,10 @@ fn main() {
             player.entity.y = 0;
         }
         if is_player_colliding_with_entities(&player.entity, std::iter::once(&coin)){
-            panic!("U Win! <3");
+            score += 1;
+            coin.x = rng.gen_range(0..(640/16))*16;
+            coin.y = rng.gen_range(0..(640/16))*16;
+            dbg!(score);
         }
         // draw world:
         for enemy in &enemies{
@@ -91,6 +95,9 @@ fn main() {
 
         window_buffer.draw_sprite(player.entity.x, player.entity.y, &symbols.get(&'P').unwrap());
 
+        // if u_win{
+        //     window_buffer.draw_sprite(20*16, 5*16, &symbols.get(&'W').unwrap())
+        // }
         //println!("x:{} y:{}",player.x,player.y);
         //player.y += player_vec_y as i32;
         //println!("{}",rect_rect(player.x, player.y, player.width as i32, player.height as i32, 0, 100, 16, 16));
