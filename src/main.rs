@@ -92,6 +92,7 @@ fn main() {
         }
 
         window_buffer.draw_sprite(coin.x, coin.y, &symbols.get(&'c').unwrap());
+        draw_score(&mut window_buffer, &symbols,score);
 
         window_buffer.draw_sprite(player.entity.x, player.entity.y, &symbols.get(&'P').unwrap());
 
@@ -107,6 +108,13 @@ fn main() {
             .update_with_buffer(&window_buffer.buffer, WINDOW_W as usize, WINDOW_H as usize)
             .unwrap();
     }
+}
+
+fn draw_score(sprite: &mut Sprite, symbols: &HashMap<char, Sprite>, score: u64) {
+    if score > 9 {
+        todo!("Sorry you broke the game :*(");
+    }
+    sprite.draw_sprite(WINDOW_W as i32- 32, 16, symbols.get(&score.to_string().chars().next().unwrap()).unwrap());
 }
 
 #[allow(dead_code)]
