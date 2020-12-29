@@ -1,5 +1,6 @@
 use image::Pixel;
 use minifb::{Key, Window, WindowOptions};
+use rand::Rng;
 use std::collections::HashMap;
 
 mod sprites;
@@ -7,7 +8,7 @@ use sprites::Sprite;
 mod entity;
 use entity::{Entity, Interactable};
 mod interactables;
-use interactables::Player;
+use interactables::{Player,Enemy};
 
 const WINDOW_W: u32 = 640;
 const WINDOW_H: u32 = 640;
@@ -30,14 +31,12 @@ fn main() {
     symbols.insert('8', Sprite::load_from_image(&digits, 144, 0, 14, 18));
     symbols.insert('9', Sprite::load_from_image(&digits, 162, 0, 14, 18));
 
-    symbols.insert('g', Sprite::load_from_image(&sprites, 0, 0, 16, 16));
+    symbols.insert('g', Sprite::load_from_image(&sprites, 0, 0, 16, 16)); // ground
     symbols.insert('G', Sprite::load_from_image(&sprites, 16, 0, 16, 16)); // goal
     symbols.insert('W', Sprite::load_from_image(&sprites, 0, 16, 50, 9)); // u win!
     symbols.insert('c', Sprite::load_from_image(&coin_img, 1, 1, 14, 14));
     symbols.insert('p', Sprite::load_from_image(&sprites, 32, 0, 16, 16));  // player on ground
     symbols.insert('P', Sprite::load_from_image(&sprites, 48, 0, 16, 16));  // player in air
-
-    let mut world: Vec<Entity> = [].to_vec();
 
     let mut window_buffer = Sprite::new(WINDOW_W, WINDOW_H);
 
@@ -53,20 +52,35 @@ fn main() {
         entity: Entity::new_from_sprite(symbols.get(&'p').unwrap().clone(), 0, 0),
     };
 
+    let mut rng = rand::thread_rng();
+    let mut enemies: Vec<Enemy> = vec![];
+    for _ in 0..5{
+        enemies.push(Enemy{
+            entity: Entity::new_from_sprite(symbols.get(&'g').unwrap().clone(), rng.gen_range(4..40)*16, rng.gen_range(4..40)*16)
+        });
+    }
+
     let mut i: u64 = 0;
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        const MAX_UPDATE_EVERY : u64 = 30; // ~2/sec
+        const MAX_UPDATE_EVERY : u64 = 15; // ~?/sec
         window_buffer.clear();
 
         // Key Input
         if i == 0 {
             player.update(&window);
+            for enemy in &mut enemies{
+                enemy.update(&window);
+            }
         }
         i = (i+1) % MAX_UPDATE_EVERY;
 
+        if is_player_colliding_with_entities(&player.entity, enemies.iter().map(|enemy|{&enemy.entity})){
+            break;
+        }
+
         // draw world:
-        for entity in &world{
-            window_buffer.draw_sprite(entity.x, entity.y, &entity.texture);
+        for enemy in &enemies{
+            window_buffer.draw_sprite(enemy.entity.x, enemy.entity.y, &enemy.entity.texture);
         }
 
         window_buffer.draw_sprite(player.entity.x, player.entity.y, &symbols.get(&'P').unwrap());
@@ -121,8 +135,8 @@ fn blend(a: u32, b: u32) -> u32 {
 
     u32::from_be_bytes([alpha, red, green, blue])
 }
-fn is_player_colliding_with_entity_vec(player: &Entity,entity_vec: &[Entity]) -> bool{
-    for entity in entity_vec{
+fn is_player_colliding_with_entities<'a>(player: &Entity, entities: impl Iterator<Item=&'a Entity>) -> bool{
+    for entity in entities{
         if rect_rect(player.x, player.y, player.width as i32, player.height as i32, entity.x, entity.y, entity.width as i32, entity.height as i32){
             return true;
         }

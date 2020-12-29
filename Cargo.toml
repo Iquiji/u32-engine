@@ -14,7 +14,7 @@ edition = "2018"
 # panic = "abort"
 
 [dependencies]
-rand = "0"
+rand = "0.8"
 minifb = "0.19"
 image = "0.23.2"
 serde = "1"
