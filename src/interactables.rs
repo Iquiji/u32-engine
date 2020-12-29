@@ -1,9 +1,7 @@
-use crate::sprites::Sprite;
 use crate::entity::Entity;
 use crate::entity::Interactable;
-use minifb::{Key, Window, WindowOptions};
-use rand::prelude::*;
-use rand::distributions::{Distribution, Uniform};
+use minifb::{Key, Window};
+use rand::Rng;
 
 pub struct Player{
     pub entity: Entity,
