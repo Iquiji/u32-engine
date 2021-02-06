@@ -1,3 +1,5 @@
+use minifb::Window;
+
 use crate::sprites::Sprite;
 #[derive(Debug, Clone)]
 pub struct Entity {
@@ -21,5 +23,5 @@ impl Entity {
 }
 
 pub trait Interactable {
-    fn update(self);
+    fn update(&mut self,window: &Window);
 }
