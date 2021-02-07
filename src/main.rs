@@ -9,27 +9,33 @@ mod entity;
 use entity::{Entity, Interactable};
 mod interactables;
 use interactables::{Player,Enemy};
+use std::time::Instant;
+mod font;
+use font::Font;
 
 const WINDOW_W: u32 = 640;
 const WINDOW_H: u32 = 640;
 
 fn main() {
+    let base_font = Font::init();
+
     let digits = image::open("digits.png").unwrap().to_rgba8();
     let sprites = image::open("sprites.png").unwrap().to_rgba8();
     let coin_img = image::open("coin.png").unwrap().to_rgba8();
 
     let mut symbols = HashMap::new();
 
-    symbols.insert('0', Sprite::load_from_image(&digits, 0, 0, 14, 18));
-    symbols.insert('1', Sprite::load_from_image(&digits, 18, 0, 14, 18));
-    symbols.insert('2', Sprite::load_from_image(&digits, 36, 0, 14, 18));
-    symbols.insert('3', Sprite::load_from_image(&digits, 54, 0, 14, 18));
-    symbols.insert('4', Sprite::load_from_image(&digits, 72, 0, 14, 18));
-    symbols.insert('5', Sprite::load_from_image(&digits, 90, 0, 14, 18));
-    symbols.insert('6', Sprite::load_from_image(&digits, 108, 0, 14, 18));
-    symbols.insert('7', Sprite::load_from_image(&digits, 126, 0, 14, 18));
-    symbols.insert('8', Sprite::load_from_image(&digits, 144, 0, 14, 18));
-    symbols.insert('9', Sprite::load_from_image(&digits, 162, 0, 14, 18));
+    // Old number loading: // new in font.rs
+    // symbols.insert('0', Sprite::load_from_image(&digits, 0, 0, 14, 18));
+    // symbols.insert('1', Sprite::load_from_image(&digits, 18, 0, 14, 18));
+    // symbols.insert('2', Sprite::load_from_image(&digits, 36, 0, 14, 18));
+    // symbols.insert('3', Sprite::load_from_image(&digits, 54, 0, 14, 18));
+    // symbols.insert('4', Sprite::load_from_image(&digits, 72, 0, 14, 18));
+    // symbols.insert('5', Sprite::load_from_image(&digits, 90, 0, 14, 18));
+    // symbols.insert('6', Sprite::load_from_image(&digits, 108, 0, 14, 18));
+    // symbols.insert('7', Sprite::load_from_image(&digits, 126, 0, 14, 18));
+    // symbols.insert('8', Sprite::load_from_image(&digits, 144, 0, 14, 18));
+    // symbols.insert('9', Sprite::load_from_image(&digits, 162, 0, 14, 18));
 
     symbols.insert('g', Sprite::load_from_image(&sprites, 0, 0, 16, 16)); // ground
     symbols.insert('G', Sprite::load_from_image(&sprites, 16, 0, 16, 16)); // goal
@@ -63,15 +69,23 @@ fn main() {
 
     let mut score: u64 = 0;
     let mut i: u64 = 0;
+
+    let mut time_frame = Instant::now();
+    let mut counter: u32 = 0;
+
     while window.is_open() && !window.is_key_down(Key::Escape) {
         const MAX_UPDATE_EVERY : u64 = 15; // ~?/sec
         window_buffer.clear();
 
+        let delta_millis: u32 = time_frame.elapsed().as_millis() as u32;
+        time_frame = Instant::now();
+        // println!("frame_time: {}, fps: {}",delta_millis,1000.0 / delta_millis as f32);
+
         // Key Input
         if i == 0 {
-            player.update(&window);
+            player.update(&window,delta_millis);
             for enemy in &mut enemies{
-                enemy.update(&window);
+                enemy.update(&window,delta_millis);
             }
         }
         i = (i+1) % MAX_UPDATE_EVERY;
@@ -92,10 +106,13 @@ fn main() {
         }
 
         window_buffer.draw_sprite(coin.x, coin.y, &symbols.get(&'c').unwrap());
-        draw_score(&mut window_buffer, &symbols,score);
+        draw_score(&mut window_buffer,score,&base_font);
 
         window_buffer.draw_sprite(player.entity.x, player.entity.y, &symbols.get(&'P').unwrap());
 
+
+        window_buffer.draw_sprite(0, 0, &base_font.get_string(&counter.to_string()));
+        window_buffer.draw_sprite(0, 16, &base_font.get_string(&("fps: ".to_owned() + &(1000/delta_millis).to_string())));
         // if u_win{
         //     window_buffer.draw_sprite(20*16, 5*16, &symbols.get(&'W').unwrap())
         // }
@@ -107,14 +124,13 @@ fn main() {
         window
             .update_with_buffer(&window_buffer.buffer, WINDOW_W as usize, WINDOW_H as usize)
             .unwrap();
+        counter += 1;
     }
 }
 
-fn draw_score(sprite: &mut Sprite, symbols: &HashMap<char, Sprite>, score: u64) {
-    if score > 9 {
-        todo!("Sorry you broke the game :*(");
-    }
-    sprite.draw_sprite(WINDOW_W as i32- 32, 16, symbols.get(&score.to_string().chars().next().unwrap()).unwrap());
+fn draw_score(sprite: &mut Sprite, score: u64, font: &Font) {
+    //sprite.draw_sprite(WINDOW_W as i32- 32, 16, symbols.get(&score.to_string().chars().next().unwrap()).unwrap());
+    sprite.draw_sprite(WINDOW_W as i32- 9*16, 16, &font.get_string(&("Score: ".to_owned() + &score.to_string())));
 }
 
 #[allow(dead_code)]

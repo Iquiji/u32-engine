@@ -8,7 +8,7 @@ pub struct Player{
 }
 
 impl Interactable for Player{
-    fn update(&mut self,window: &Window){
+    fn update(&mut self,window: &Window,delta_millis: u32){
         if let Some(keys) = window.get_keys() {
             for t in keys {
                 match t {
@@ -27,7 +27,7 @@ pub struct Enemy{
     pub entity: Entity,
 }
 impl Interactable for Enemy{
-    fn update(&mut self,_window: &Window){
+    fn update(&mut self,_window: &Window,delta_millis: u32){
         let mut rng = rand::thread_rng();
         match rng.gen_range(0..4){
             0 => self.entity.y -= 16,

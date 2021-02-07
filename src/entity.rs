@@ -23,5 +23,5 @@ impl Entity {
 }
 
 pub trait Interactable {
-    fn update(&mut self,window: &Window);
+    fn update(&mut self,window: &Window,delta_millis: u32);
 }

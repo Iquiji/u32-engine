@@ -13,6 +13,11 @@ impl Sprite {
             self.buffer[xy as usize] = 0xFF_FF_FF_FF;
         }
     }
+    pub fn clear_black(&mut self) {
+        for xy in 0..self.width * self.height {
+            self.buffer[xy as usize] = 0x00_00_00_00;
+        }
+    }
     #[allow(dead_code)]
     pub fn draw_line(&mut self, x0: usize, y0: usize, x1: usize, y1: usize, color: u32) {
         let deltax = (x1 as f64 - x0 as f64).abs();
@@ -84,15 +89,14 @@ impl Sprite {
     }
     #[allow(dead_code)]
     pub fn new(width: u32, height: u32) -> Sprite {
-        let mut shallow: Sprite = Sprite {
+        Sprite {
             width,
             height,
-            buffer: Vec::new(),
-        };
-        for _ in 0..shallow.width * shallow.height {
-            shallow.buffer.push(0xFF_00_00_00);
+            buffer: vec![0x00_00_00_00;width as usize *height as usize],
         }
-        shallow
+        // for _ in 0..shallow.width * shallow.height {
+        //     shallow.buffer.push(0xFF_00_00_00);
+        // }
     }
     #[allow(dead_code)]
     pub fn draw_rect(&mut self, x: u32, y: u32, size_x: u32, size_y: u32, color: u32) {
@@ -108,11 +112,15 @@ fn blend(a: u32, b: u32) -> u32 {
     let a_as_u8 = a.to_be_bytes();
     let b_as_u8 = b.to_be_bytes();
     let alpha_a: f32 = a_as_u8[0] as f32 / 255.0;
+    let alpha_b: f32 = b_as_u8[0] as f32 / 255.0;
 
     let red = (a_as_u8[1] as f32 * alpha_a + b_as_u8[1] as f32 * (1.0 - alpha_a as f32)) as u8;
     let green = (a_as_u8[2] as f32 * alpha_a + b_as_u8[2] as f32 * (1.0 - alpha_a as f32)) as u8;
     let blue = (a_as_u8[3] as f32 * alpha_a + b_as_u8[3] as f32 * (1.0 - alpha_a as f32)) as u8;
-    let alpha: u8 = 0xFF;
+    let mut alpha: u8 = 0xFF;
+    if alpha_a == 0.0 && alpha_b == 0.0{
+        alpha = 0x00;
+    }
 
     u32::from_be_bytes([alpha, red, green, blue])
 }
