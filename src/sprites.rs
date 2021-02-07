@@ -13,6 +13,7 @@ impl Sprite {
             self.buffer[xy as usize] = 0xFF_FF_FF_FF;
         }
     }
+    #[allow(dead_code)]
     pub fn clear_black(&mut self) {
         for xy in 0..self.width * self.height {
             self.buffer[xy as usize] = 0x00_00_00_00;
@@ -105,6 +106,16 @@ impl Sprite {
                 self.buffer[(x + y * self.width) as usize] = blend(color, self.buffer[(x + y * self.width) as usize]);
             }
         }
+    }
+    #[allow(dead_code)]
+    pub fn resize(&self,resize_factor: u32) -> Sprite{
+        let mut resized_sprite = Sprite::new(self.width*resize_factor, self.height*resize_factor);
+        todo!();
+    }
+    #[allow(dead_code)]
+    pub fn resize_self(&mut self,resize_factor: u32){
+        let mut resized_sprite = Sprite::new(self.width*resize_factor, self.height*resize_factor);
+        todo!();
     }
 }
 

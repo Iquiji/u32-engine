@@ -19,13 +19,13 @@ const WINDOW_H: u32 = 640;
 fn main() {
     let base_font = Font::init();
 
-    let digits = image::open("digits.png").unwrap().to_rgba8();
     let sprites = image::open("sprites.png").unwrap().to_rgba8();
     let coin_img = image::open("coin.png").unwrap().to_rgba8();
 
     let mut symbols = HashMap::new();
 
     // Old number loading: // new in font.rs
+    // let digits = image::open("digits.png").unwrap().to_rgba8();
     // symbols.insert('0', Sprite::load_from_image(&digits, 0, 0, 14, 18));
     // symbols.insert('1', Sprite::load_from_image(&digits, 18, 0, 14, 18));
     // symbols.insert('2', Sprite::load_from_image(&digits, 36, 0, 14, 18));

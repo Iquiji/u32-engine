@@ -34,14 +34,14 @@ impl Font<'_>{
         let mut base_sprite = Sprite::new(16*length_string as u32, 16);
         
         for (i,char) in string.chars().enumerate() {
-            let singleString = char.to_ascii_uppercase().to_string();
+            let single_string = char.to_ascii_uppercase().to_string();
             //let sprite_part = self.font_map.get(&*singleString);
-            let sprite_part = match self.font_map.get(&*singleString){
+            let sprite_part = match self.font_map.get(&*single_string){
                 Some(sprite) => {
                     sprite.to_owned()
                 }
                 None => {
-                    println!("Could not find '{}' in Font",singleString);
+                    println!("Could not find '{}' in Font",single_string);
                     Sprite::new(16, 16)
                 }
             };
