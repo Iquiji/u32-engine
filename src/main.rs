@@ -75,7 +75,7 @@ fn main() {
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         const MAX_UPDATE_EVERY : u64 = 15; // ~?/sec
-        window_buffer.clear();
+        window_buffer.clear_black();
 
         let delta_millis: u32 = time_frame.elapsed().as_millis() as u32;
         time_frame = Instant::now();

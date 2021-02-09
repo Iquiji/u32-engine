@@ -24,7 +24,7 @@ impl Font<'_>{
                 sprite.to_owned()
             }
             None => {
-                println!("Could not find '{}' in Font",single);
+                dbg!("Could not find '{}' in Font",single);
                 Sprite::new(16, 16)
             }
         }
@@ -41,7 +41,7 @@ impl Font<'_>{
                     sprite.to_owned()
                 }
                 None => {
-                    println!("Could not find '{}' in Font",single_string);
+                    dbg!("Could not find '{}' in Font",single_string);
                     Sprite::new(16, 16)
                 }
             };
